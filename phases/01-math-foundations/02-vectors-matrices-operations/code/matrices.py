@@ -1,4 +1,5 @@
 import random
+from re import M
 
 
 class Vector:
@@ -22,7 +23,7 @@ class Vector:
         return sum(a * b for a, b in zip(self.data, other.data))
 
     def magnitude(self):
-        return sum(x ** 2 for x in self.data) ** 0.5
+        return sum(x**2 for x in self.data) ** 0.5
 
     def normalize(self):
         mag = self.magnitude()
@@ -55,39 +56,51 @@ class Matrix:
     def __add__(self, other):
         if isinstance(other, Matrix):
             if other.shape == self.shape:
-                return Matrix([
-                    [self.data[i][j] + other.data[i][j] for j in range(self.cols)]
-                    for i in range(self.rows)
-                ])
+                return Matrix(
+                    [
+                        [self.data[i][j] + other.data[i][j] for j in range(self.cols)]
+                        for i in range(self.rows)
+                    ]
+                )
             if other.rows == 1 and other.cols == self.cols:
-                return Matrix([
-                    [self.data[i][j] + other.data[0][j] for j in range(self.cols)]
-                    for i in range(self.rows)
-                ])
+                return Matrix(
+                    [
+                        [self.data[i][j] + other.data[0][j] for j in range(self.cols)]
+                        for i in range(self.rows)
+                    ]
+                )
             if other.cols == 1 and other.rows == self.rows:
-                return Matrix([
-                    [self.data[i][j] + other.data[i][0] for j in range(self.cols)]
-                    for i in range(self.rows)
-                ])
+                return Matrix(
+                    [
+                        [self.data[i][j] + other.data[i][0] for j in range(self.cols)]
+                        for i in range(self.rows)
+                    ]
+                )
         raise ValueError(f"Cannot add shapes {self.shape} and {other.shape}")
 
     def __sub__(self, other):
-        return Matrix([
-            [self.data[i][j] - other.data[i][j] for j in range(self.cols)]
-            for i in range(self.rows)
-        ])
+        return Matrix(
+            [
+                [self.data[i][j] - other.data[i][j] for j in range(self.cols)]
+                for i in range(self.rows)
+            ]
+        )
 
     def scalar_multiply(self, scalar):
-        return Matrix([
-            [self.data[i][j] * scalar for j in range(self.cols)]
-            for i in range(self.rows)
-        ])
+        return Matrix(
+            [
+                [self.data[i][j] * scalar for j in range(self.cols)]
+                for i in range(self.rows)
+            ]
+        )
 
     def element_wise_multiply(self, other):
-        return Matrix([
-            [self.data[i][j] * other.data[i][j] for j in range(self.cols)]
-            for i in range(self.rows)
-        ])
+        return Matrix(
+            [
+                [self.data[i][j] * other.data[i][j] for j in range(self.cols)]
+                for i in range(self.rows)
+            ]
+        )
 
     def matmul(self, other):
         if self.cols != other.rows:
@@ -95,22 +108,23 @@ class Matrix:
                 f"Cannot multiply shapes {self.shape} and {other.shape}: "
                 f"inner dimensions {self.cols} != {other.rows}"
             )
-        return Matrix([
+        return Matrix(
             [
-                sum(self.data[i][k] * other.data[k][j] for k in range(self.cols))
-                for j in range(other.cols)
+                [
+                    sum(self.data[i][k] * other.data[k][j] for k in range(self.cols))
+                    for j in range(other.cols)
+                ]
+                for i in range(self.rows)
             ]
-            for i in range(self.rows)
-        ])
+        )
 
     def __matmul__(self, other):
         return self.matmul(other)
 
     def transpose(self):
-        return Matrix([
-            [self.data[j][i] for j in range(self.rows)]
-            for i in range(self.cols)
-        ])
+        return Matrix(
+            [[self.data[j][i] for j in range(self.rows)] for i in range(self.cols)]
+        )
 
     @property
     def T(self):
@@ -125,10 +139,12 @@ class Matrix:
             return self.data[0][0] * self.data[1][1] - self.data[0][1] * self.data[1][0]
         det = 0
         for j in range(self.cols):
-            minor = Matrix([
-                [self.data[i][k] for k in range(self.cols) if k != j]
-                for i in range(1, self.rows)
-            ])
+            minor = Matrix(
+                [
+                    [self.data[i][k] for k in range(self.cols) if k != j]
+                    for i in range(1, self.rows)
+                ]
+            )
             det += ((-1) ** j) * self.data[0][j] * minor.determinant()
         return det
 
@@ -138,17 +154,58 @@ class Matrix:
         det = self.determinant()
         if abs(det) < 1e-10:
             raise ValueError("Matrix is singular, no inverse exists")
-        return Matrix([
-            [self.data[1][1] / det, -self.data[0][1] / det],
-            [-self.data[1][0] / det, self.data[0][0] / det]
-        ])
+        return Matrix(
+            [
+                [self.data[1][1] / det, -self.data[0][1] / det],
+                [-self.data[1][0] / det, self.data[0][0] / det],
+            ]
+        )
+
+    def get_minor(self, i, j) -> "Matrix":
+        minor_data = [
+            [val for c_idx, val in enumerate(row) if c_idx != j]
+            for r_idx, row in enumerate(self.data)
+            if r_idx != i
+        ]
+        return Matrix(minor_data)
+
+    def get_all_minors(self) -> list[list["Matrix"]]:
+        """
+        Generates all minor matrices.
+        Returns a 2D list containing the minor Matrix objects.
+        """
+        return [
+            [self.get_minor(i, j) for j in range(self.cols)] for i in range(self.rows)
+        ]
+
+    def get_cofactor_matrix(self) -> "Matrix":
+        """Returns a new Matrix representing the matrix of cofactors."""
+
+        all_minors = self.get_all_minors()
+
+        cofactor_data = [
+            [((-1) ** (i + j)) * minor.determinant() for j, minor in enumerate(row)]
+            for i, row in enumerate(all_minors)
+        ]
+
+        return Matrix(cofactor_data)
+
+    def inverse_3x3(self):
+        if self.shape != (3, 3):
+            raise ValueError("This method only works for 3x3 matrices")
+        det = self.determinant()
+        if abs(det) < 1e-10:
+            raise ValueError("Matrix is singular, no inverse exists")
+
+        matrix_of_cofactors = self.get_cofactor_matrix()
+
+        T_matrix_of_cofactors = matrix_of_cofactors.transpose()
+
+        return T_matrix_of_cofactors.scalar_multiply(1 / det)
 
     @staticmethod
     def identity(n):
-        return Matrix([
-            [1 if i == j else 0 for j in range(n)]
-            for i in range(n)
-        ])
+        return Matrix([[1 if i == j else 0 for j in range(n)] for i in range(n)])
 
     @staticmethod
     def zeros(rows, cols):
@@ -156,10 +213,9 @@ class Matrix:
 
     @staticmethod
     def random(rows, cols, low=-1.0, high=1.0):
-        return Matrix([
-            [random.uniform(low, high) for _ in range(cols)]
-            for _ in range(rows)
-        ])
+        return Matrix(
+            [[random.uniform(low, high) for _ in range(cols)] for _ in range(rows)]
+        )
 
 
 def relu_matrix(m):
@@ -300,11 +356,13 @@ def demo_weight_matrix_intuition():
     print("\nA weight matrix transforms input features into output features.")
     print("Each row extracts one pattern from the input.\n")
 
-    W = Matrix([
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.5, 0.5, 0.0],
-    ])
+    W = Matrix(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.5, 0.5, 0.0],
+        ]
+    )
     x = Matrix([[0.8], [0.6], [0.1]])
 
     print("Weight matrix W (3 detectors, 3 inputs):")
@@ -319,10 +377,25 @@ def demo_weight_matrix_intuition():
     print("Row 2 of W = [0.5, 0.5, 0]: averages features 0 and 1")
 
 
+def verify_inverse():
+
+    a = Matrix([[2, 3], [3, 3]])
+    print(a @ a.inverse_2x2())
+
+
+def demo_3x3_inverse():
+    a = Matrix([[0, -3, -2], [1, -4, -2], [-3, 4, 1]])
+
+    a_inv = a.inverse_3x3()
+
+    print(a_inv)
+
+
 if __name__ == "__main__":
-    demo_vectors()
-    demo_basic_operations()
-    demo_determinant_inverse()
-    demo_broadcasting()
-    demo_weight_matrix_intuition()
+    # demo_vectors()
+    # demo_basic_operations()
+    # demo_determinant_inverse()
+    # demo_broadcasting()
+    # demo_weight_matrix_intuition()
     demo_neural_network_layer()
+    # demo_3x3_inverse()

@@ -1,3 +1,7 @@
+import itertools
+import random
+
+
 class Vector:
     def __init__(self, components):
         self.components = list(components)
@@ -27,6 +31,7 @@ class Vector:
 
     def angle_between(self, other):
         import math
+
         cos_theta = self.cosine_similarity(other)
         cos_theta = max(-1.0, min(1.0, cos_theta))
         return math.degrees(math.acos(cos_theta))
@@ -85,26 +90,34 @@ class Matrix:
 
     def __matmul__(self, other):
         if isinstance(other, Vector):
-            return Vector([
-                sum(self.rows[i][j] * other.components[j] for j in range(self.shape[1]))
-                for i in range(self.shape[0])
-            ])
+            return Vector(
+                [
+                    sum(
+                        self.rows[i][j] * other.components[j]
+                        for j in range(self.shape[1])
+                    )
+                    for i in range(self.shape[0])
+                ]
+            )
         rows = []
         for i in range(self.shape[0]):
             row = []
             for j in range(other.shape[1]):
-                row.append(sum(
-                    self.rows[i][k] * other.rows[k][j]
-                    for k in range(self.shape[1])
-                ))
+                row.append(
+                    sum(
+                        self.rows[i][k] * other.rows[k][j] for k in range(self.shape[1])
+                    )
+                )
             rows.append(row)
         return Matrix(rows)
 
     def transpose(self):
-        return Matrix([
-            [self.rows[j][i] for j in range(self.shape[0])]
-            for i in range(self.shape[1])
-        ])
+        return Matrix(
+            [
+                [self.rows[j][i] for j in range(self.shape[0])]
+                for i in range(self.shape[1])
+            ]
+        )
 
     def rank(self):
         rows = [row[:] for row in self.rows]
@@ -132,7 +145,7 @@ class Matrix:
         return f"Matrix({self.rows})"
 
 
-if __name__ == "__main__":
+def main():
     print("=== Vectors ===")
     a = Vector([1, 2, 3])
     b = Vector([4, 5, 6])
@@ -202,6 +215,7 @@ if __name__ == "__main__":
 
     print("\n=== Neural Network Layer (Matrix x Vector) ===")
     import random
+
     random.seed(42)
     weights = Matrix([[random.gauss(0, 0.1) for _ in range(3)] for _ in range(2)])
     input_vec = Vector([1.0, 0.5, -0.3])
@@ -209,3 +223,43 @@ if __name__ == "__main__":
     print(f"Input (3D):  {input_vec}")
     print(f"Output (2D): {output}")
     print("^ This is literally what a neural network layer does.")
+
+
+if __name__ == "__main__":
+    # main()
+
+    # Exercise
+
+    v = Vector([1, 1])
+    m = Matrix([[2, 0], [0, 3]])
+
+    v1 = Vector([1, 2, 3])
+    v2 = Vector([1, 1, 1])
+
+    p = v1.project_onto(v2)
+    print(p)
+
+    rank_2_matrix = Matrix([[1, 0, 2], [0, 1, 1], [0, 0, 0]])  # xy plane
+
+    print(rank_2_matrix.rank())
+
+    num_vectors = 5
+    dimension = 50
+    word_vectors: list[Vector] = []
+
+    random.seed(42)
+
+    for _ in range(num_vectors):
+        # Generate 50 random floats between -1.0 and 1.0
+        random_components = [random.uniform(-1.0, 1.0) for _ in range(dimension)]
+        word_vectors.append(Vector(random_components))
+
+    most_similar = {"max": -1.0, "pair": None}
+    for (i, vec1), (j, vec2) in itertools.combinations(enumerate(word_vectors), 2):
+        cos_sim = vec1.cosine_similarity(vec2)
+
+        if cos_sim > most_similar["max"]:
+            most_similar["max"] = cos_sim
+            most_similar["pair"] = (i, j)
+
+    print(most_similar)

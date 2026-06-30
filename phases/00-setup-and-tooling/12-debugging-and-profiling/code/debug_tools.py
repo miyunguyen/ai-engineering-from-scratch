@@ -1,7 +1,7 @@
+import logging
 import sys
 import time
 import tracemalloc
-import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -12,17 +12,20 @@ logger = logging.getLogger(__name__)
 try:
     import torch
     import torch.nn as nn
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
 
 
 def debug_print(name, tensor):
-    print(f"  {name}: shape={tensor.shape}, dtype={tensor.dtype}, "
-          f"device={tensor.device}, "
-          f"min={tensor.min().item():.4f}, max={tensor.max().item():.4f}, "
-          f"mean={tensor.mean().item():.4f}, "
-          f"has_nan={tensor.isnan().any().item()}")
+    print(
+        f"  {name}: shape={tensor.shape}, dtype={tensor.dtype}, "
+        f"device={tensor.device}, "
+        f"min={tensor.min().item():.4f}, max={tensor.max().item():.4f}, "
+        f"mean={tensor.mean().item():.4f}, "
+        f"has_nan={tensor.isnan().any().item()}"
+    )
 
 
 class Timer:
@@ -48,6 +51,7 @@ def check_shapes(model, sample_input):
             in_shape = inp[0].shape if isinstance(inp, tuple) else inp.shape
             out_shape = out.shape if hasattr(out, "shape") else type(out).__name__
             print(f"    {name}: {in_shape} -> {out_shape}")
+
         return hook
 
     for name, module in model.named_modules():
@@ -87,12 +91,12 @@ def check_gradient_health(model):
     for name, param in model.named_parameters():
         if param.grad is not None:
             grad_norm = param.grad.data.norm(2).item()
-            total_norm += grad_norm ** 2
+            total_norm += grad_norm**2
             if grad_norm > 100:
                 print(f"    WARNING: large gradient in {name}: {grad_norm:.2f}")
             if grad_norm == 0:
                 print(f"    WARNING: zero gradient in {name}")
-    total_norm = total_norm ** 0.5
+    total_norm = total_norm**0.5
     print(f"  Total gradient norm: {total_norm:.4f}")
     return total_norm
 
