@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 
 def rotation_2d(theta):
     c, s = math.cos(theta), math.sin(theta)
@@ -70,12 +72,12 @@ def eigenvalues_2x2(matrix):
     c, d = matrix[1]
     trace = a + d
     det = a * d - b * c
-    discriminant = trace ** 2 - 4 * det
+    discriminant = trace**2 - 4 * det
     if discriminant < 0:
         real = trace / 2
         imag = (-discriminant) ** 0.5 / 2
         return (complex(real, imag), complex(real, -imag))
-    sqrt_disc = discriminant ** 0.5
+    sqrt_disc = discriminant**0.5
     return ((trace + sqrt_disc) / 2, (trace - sqrt_disc) / 2)
 
 
@@ -306,8 +308,9 @@ def demo_numpy_comparison():
         return
 
     theta = math.pi / 4
-    R = np.array([[math.cos(theta), -math.sin(theta)],
-                  [math.sin(theta), math.cos(theta)]])
+    R = np.array(
+        [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
+    )
 
     point = np.array([1.0, 0.0])
     print(f"\nRotate (1,0) by 45 deg: {R @ point}")
@@ -343,6 +346,16 @@ def demo_numpy_comparison():
     print("PCA picks the eigenvectors with the largest eigenvalues.")
 
 
+def demo_eigen():
+    matrix = [[4, 2], [1, 3]]
+    vals = eigenvalues_2x2(matrix)
+    print(vals)
+
+    vals = np.linalg.eigvals(matrix)
+
+    print(vals)
+
+
 if __name__ == "__main__":
     demo_basic_transformations()
     demo_unit_square()
@@ -352,3 +365,4 @@ if __name__ == "__main__":
     demo_eigendecomposition()
     demo_determinant_meaning()
     demo_numpy_comparison()
+    demo_eigen()
