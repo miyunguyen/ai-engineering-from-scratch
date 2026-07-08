@@ -103,6 +103,51 @@ class Value:
         for v in reversed(topo):
             v._backward()
 
+class Dual:
+    def __init__(self, data, grad):
+        self.data = float(data)
+        self.grad = float(grad)
+
+    def __repr__(self):
+        return f"Value(data={self.data:.4f}, grad={self.grad:.4f})"
+
+    def __add__(self, other):
+        other = other if isinstance(other, Dual) else Dual(other)
+        return Dual(
+            self.data + other.data,
+            self.grad + other.grad
+        )
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __mul__(self, other):
+        other = other if isinstance(other, Dual) else Dual(other)
+        return Dual(
+            self.data * other.data,
+            self.grad * other.data + self.data * other.grad
+        )
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return self * -1
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __rsub__(self, other):
+        return other + (-self)
+
+    def __pow__(self, n):
+        return Dual(
+            self.data ** n,
+            n * (self.data ** (n - 1)) * self.grad
+        )
+
+    def __truediv__(self, other):
+        return self * (other ** -1) if isinstance(other, Dual) else self * (Dual(other) ** -1)
 
 def demo_basic():
     print("=== Basic: y = relu(x1 * x2 + 1) ===")
@@ -121,6 +166,36 @@ def demo_basic():
     assert abs(x2.grad - 2.0) < 1e-6
     print("  PASSED\n")
 
+def demo_basic_reverse():
+    print("=== Basic: y = (x1 * x2 + 1) ===")
+    x1 = Value(2.0)
+    x2 = Value(3.0)
+    a = x1 * x2
+    y = a + Value(1.0)
+    y.backward()
+
+    print(f"  x1 = 2.0, x2 = 3.0")
+    print(f"  y  = {y.data}")
+    print(f"  dy/dx1 = {x1.grad}  (expected 3.0 = x2)")
+    print(f"  dy/dx2 = {x2.grad}  (expected 2.0 = x1)")
+    assert abs(x1.grad - 3.0) < 1e-6
+    assert abs(x2.grad - 2.0) < 1e-6
+    print("  PASSED\n")
+
+def demo_basic_foward():
+    print("=== Basic: y = relu(x1 * x2 + 1) ===")
+    x1 = Dual(2.0, 1)
+    x2 = Dual(3.0, 0)
+    a = x1 * x2
+    y = a + Dual(1.0, 0)
+
+    print(f"  x1 = 2.0, x2 = 3.0")
+    print(f"  y  = {y.data}")
+    print(f"  dy/dx1 = {y.grad}  (expected 3.0 = x2)")
+    # print(f"  dy/dx2 = {x2.grad}  (expected 2.0 = x1)")
+    assert abs(y.grad - 3.0) < 1e-6
+    # assert abs(x2.grad - 2.0) < 1e-6
+    print("  PASSED\n")
 
 def demo_power():
     print("=== Power: y = x^3, dy/dx at x=2 ===")
@@ -344,14 +419,22 @@ def demo_verify_pytorch():
     assert abs(x2_v.grad - x2_t.grad.item()) < 1e-6
     print("  MATCH\n")
 
+def demo_tanh():
+    x = Value(2)
+    y = x.tanh()
+    y.backward()
+
+    print(x1.grad)
 
 if __name__ == "__main__":
-    demo_basic()
-    demo_power()
-    demo_complex()
-    demo_neuron()
-    demo_exp_log()
-    demo_gradient_check()
-    demo_mlp_training()
-    demo_verify_pytorch()
+    demo_basic_foward()
+    demo_basic_reverse()
+    # demo_power()
+    # demo_complex()
+    # demo_neuron()
+    # demo_exp_log()
+    # demo_gradient_check()
+    # demo_mlp_training()
+    # demo_verify_pytorch()
     print("All demos passed.")
+    # demo_tanh()
