@@ -6,6 +6,10 @@ def numerical_derivative(f, x, h=1e-7):
     return (f(x + h) - f(x - h)) / (2 * h)
 
 
+def numerical_second_derivative(f, x, h=1e-7):
+    return (numerical_derivative(f, x + h) - numerical_derivative(f, x - h)) / (2 * h)
+
+
 def numerical_gradient(f, point, h=1e-7):
     gradient = []
     for i in range(len(point)):
@@ -44,11 +48,11 @@ def demo_numerical_vs_analytical():
     print("=" * 55)
 
     test_cases = [
-        ("x^2",    lambda x: x**2,        lambda x: 2*x),
-        ("x^3",    lambda x: x**3,        lambda x: 3*x**2),
+        ("x^2", lambda x: x**2, lambda x: 2 * x),
+        ("x^3", lambda x: x**3, lambda x: 3 * x**2),
         ("sin(x)", lambda x: math.sin(x), lambda x: math.cos(x)),
-        ("e^x",    lambda x: math.exp(x), lambda x: math.exp(x)),
-        ("1/x",    lambda x: 1/x,         lambda x: -1/x**2),
+        ("e^x", lambda x: math.exp(x), lambda x: math.exp(x)),
+        ("1/x", lambda x: 1 / x, lambda x: -1 / x**2),
     ]
 
     x = 2.0
@@ -69,11 +73,11 @@ def demo_gradient():
 
     def f(point):
         x, y = point
-        return x**2 + 3*x*y + y**2
+        return x**2 + 3 * x * y + y**2
 
     point = [1.0, 2.0]
     grad = numerical_gradient(f, point)
-    analytical = [2*point[0] + 3*point[1], 3*point[0] + 2*point[1]]
+    analytical = [2 * point[0] + 3 * point[1], 3 * point[0] + 2 * point[1]]
 
     print(f"\nf(x,y) = x^2 + 3xy + y^2")
     print(f"At point ({point[0]}, {point[1]}):")
@@ -118,10 +122,70 @@ def demo_gradient_descent_2d():
     print(f"Minimum found at ({point[0]:.4f}, {point[1]:.4f}) (true: (0, 0))")
 
 
+def exercise_gradient_descent_2d():
+    print("\n" + "=" * 55)
+    print("GRADIENT DESCENT: f(x,y) = x^2 + y^2")
+    print("=" * 55)
+
+    def f(point):
+        x, y = point
+        return (x - 3) ** 2 + (y + 1) ** 2
+
+    point = [0.0, 0.0]
+    lr = 0.1
+    print(f"\nStart: ({point[0]}, {point[1]}), lr={lr}")
+    for step in range(50):
+        grad = numerical_gradient(f, point)
+        point = [p - lr * g for p, g in zip(point, grad)]
+        loss = f(point)
+        if step % 5 == 0 or step == 49:
+            print(f"  step {step:2d}  ({point[0]:7.4f}, {point[1]:7.4f})  f={loss:.6f}")
+    print(f"Minimum found at ({point[0]:.4f}, {point[1]:.4f}) (true: (0, 0))")
+
+
+def ex_gradient_descent_no_momentum():
+    print("\n" + "=" * 55)
+    print("GRADIENT DESCENT: f(x) = x^4 - 3x^2")
+    print("=" * 55)
+
+    x = 0.5
+    lr = 0.1
+    print(f"\nStart: x={x}, lr={lr}")
+    for step in range(20):
+        grad = (4 * x**3) - (6 * x)
+        x = x - lr * grad
+        print(f"  step {step:2d}  x={x:20.15f}  f(x)={x**2:10.8f}")
+    print(
+        f"Minimum found at x={x:.6f} (true minimum: x=1.224744871391589 or x=-1.224744871391589)"
+    )
+
+
+def ex_gradient_descent_with_momentum():
+    print("\n" + "=" * 55)
+    print("GRADIENT DESCENT WITH MOMENTUM: f(x) = x^4 - 3x^2")
+    print("=" * 55)
+
+    x = 0.5
+    lr = 0.1
+    v = 0
+    mf = 0.2
+    print(f"\nStart: x={x}, lr={lr}, v={v}")
+    for step in range(20):
+        grad = (4 * x**3) - (6 * x)
+        v = (mf * v) + (grad * lr)
+        x = x - v
+        print(f"  step {step:2d}  x={x:20.15f}  f(x)={x**2:10.8f}")
+    print(
+        f"Minimum found at x={x:.6f} (true minimum: x=1.224744871391589 or x=-1.224744871391589)"
+    )
+
+
 def hessian_2d(f, x, y, h=1e-5):
-    fxx = (f(x + h, y) - 2 * f(x, y) + f(x - h, y)) / (h ** 2)
-    fyy = (f(x, y + h) - 2 * f(x, y) + f(x, y - h)) / (h ** 2)
-    fxy = (f(x + h, y + h) - f(x + h, y - h) - f(x - h, y + h) + f(x - h, y - h)) / (4 * h ** 2)
+    fxx = (f(x + h, y) - 2 * f(x, y) + f(x - h, y)) / (h**2)
+    fyy = (f(x, y + h) - 2 * f(x, y) + f(x, y - h)) / (h**2)
+    fxy = (f(x + h, y + h) - f(x + h, y - h) - f(x - h, y + h) + f(x - h, y - h)) / (
+        4 * h**2
+    )
     return [[fxx, fxy], [fxy, fyy]]
 
 
@@ -130,7 +194,7 @@ def taylor_approx(f, f_prime, f_double_prime, x0, h, order=2):
     if order >= 1:
         result += f_prime(x0) * h
     if order >= 2:
-        result += 0.5 * f_double_prime(x0) * h ** 2
+        result += 0.5 * f_double_prime(x0) * h**2
     return result
 
 
@@ -139,10 +203,10 @@ def hessian_eigenvalues(H):
     c, d = H[1][0], H[1][1]
     trace = a + d
     det = a * d - b * c
-    discriminant = trace ** 2 - 4 * det
+    discriminant = trace**2 - 4 * det
     if discriminant < 0:
         return None, None
-    sqrt_disc = discriminant ** 0.5
+    sqrt_disc = discriminant**0.5
     return (trace + sqrt_disc) / 2, (trace - sqrt_disc) / 2
 
 
@@ -152,10 +216,10 @@ def demo_hessian():
     print("=" * 55)
 
     def saddle(x, y):
-        return x ** 2 - y ** 2
+        return x**2 - y**2
 
     def bowl(x, y):
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     print("\nf(x,y) = x^2 - y^2 (saddle function)")
     H = hessian_2d(saddle, 0.0, 0.0)
@@ -176,7 +240,7 @@ def demo_hessian():
     print("  Both positive --> LOCAL MINIMUM")
 
     def rosenbrock(x, y):
-        return (1 - x) ** 2 + 100 * (y - x ** 2) ** 2
+        return (1 - x) ** 2 + 100 * (y - x**2) ** 2
 
     print("\nRosenbrock f(x,y) = (1-x)^2 + 100*(y-x^2)^2")
     H = hessian_2d(rosenbrock, 1.0, 1.0)
@@ -195,7 +259,9 @@ def demo_taylor():
 
     x0 = 1.0
     print(f"\nApproximating f(x) = e^x near x0 = {x0}")
-    print(f"{'h':>8}  {'True f(x0+h)':>14}  {'Order 0':>10}  {'Order 1':>10}  {'Order 2':>10}")
+    print(
+        f"{'h':>8}  {'True f(x0+h)':>14}  {'Order 0':>10}  {'Order 1':>10}  {'Order 2':>10}"
+    )
     print("-" * 60)
 
     for h in [0.1, 0.5, 1.0, 2.0]:
@@ -206,7 +272,9 @@ def demo_taylor():
         print(f"{h:8.1f}  {true_val:14.6f}  {t0:10.6f}  {t1:10.6f}  {t2:10.6f}")
 
     print(f"\nApproximating f(x) = sin(x) near x0 = 0")
-    print(f"{'h':>8}  {'True sin(h)':>14}  {'Order 0':>10}  {'Order 1':>10}  {'Order 2':>10}")
+    print(
+        f"{'h':>8}  {'True sin(h)':>14}  {'Order 0':>10}  {'Order 1':>10}  {'Order 2':>10}"
+    )
     print("-" * 60)
 
     for h in [0.1, 0.5, 1.0, 2.0]:
@@ -240,7 +308,7 @@ def demo_linear_regression():
         for x, y in zip(xs, ys):
             pred = w * x + b
             error = pred - y
-            total_loss += error ** 2
+            total_loss += error**2
             dw += 2 * error * x
             db += 2 * error
         dw /= len(xs)
@@ -255,6 +323,13 @@ def demo_linear_regression():
     print(f"Actual:  y = 2.00x + 1.00")
 
 
+def demo_numerical_second_deriative():
+    def f(x):
+        return x**3
+
+    print(numerical_second_derivative(f, 2.0))
+
+
 if __name__ == "__main__":
     demo_numerical_vs_analytical()
     demo_gradient()
@@ -263,3 +338,7 @@ if __name__ == "__main__":
     demo_hessian()
     demo_taylor()
     demo_linear_regression()
+    demo_numerical_second_deriative()
+    exercise_gradient_descent_2d()
+    ex_gradient_descent_no_momentum()
+    ex_gradient_descent_with_momentum()
