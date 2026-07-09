@@ -129,8 +129,7 @@ def demonstrate_clt(dist_fn, n_per_sample, n_averages):
         averages.append(sum(samples) / len(samples))
     return averages
 
-
-if __name__ == "__main__":
+def example_code():
     print("=" * 60)
     print("PROBABILITY AND DISTRIBUTIONS")
     print("=" * 60)
@@ -324,3 +323,8 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("All probability computations complete.")
     print("=" * 60)
+
+
+if __name__ == "__main__":
+  example_code()
+  
