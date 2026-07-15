@@ -18,11 +18,15 @@ def sequential_bayes(prior, likelihood, false_positive_rate, num_tests):
 
 class NaiveBayes:
     def __init__(self, smoothing=1.0):
-        self.smoothing = smoothing
-        self.class_counts = defaultdict(int)
-        self.word_counts = defaultdict(lambda: defaultdict(int))
-        self.class_word_totals = defaultdict(int)
-        self.vocab = set()
+        self.smoothing = smoothing  # for Laplace smoothing
+        self.class_counts = defaultdict(int)  # number of document per class
+        self.word_counts = defaultdict(
+            lambda: defaultdict(int)
+        )  # store a dict of word (count frequency) for a label
+        self.class_word_totals = defaultdict(
+            int
+        )  # total word count across all docs in a class
+        self.vocab = set()  # set of all word used in train process
 
     def train(self, documents, labels):
         for doc, label in zip(documents, labels):
@@ -101,7 +105,9 @@ def demo_bayes_theorem():
     print(f"  Test sensitivity (likelihood): {likelihood}")
     print(f"  False positive rate:           {fpr}")
     print(f"  P(sick | positive):            {posterior:.4f} ({posterior*100:.2f}%)")
-    print(f"\n  Despite 99% test accuracy, only {posterior*100:.2f}% of positives are truly sick.")
+    print(
+        f"\n  Despite 99% test accuracy, only {posterior*100:.2f}% of positives are truly sick."
+    )
 
     print(f"\n  Sequential testing (2 positive tests):")
     sequential_bayes(prior, likelihood, fpr, 2)
@@ -122,7 +128,9 @@ def demo_spam_filter():
     print(f"\n  P(spam):                 {p_spam}")
     print(f"  P('lottery' | spam):     {p_lottery_given_spam}")
     print(f"  P('lottery' | not spam): {p_lottery_given_ham}")
-    print(f"  P(spam | 'lottery'):     {p_spam_given_lottery:.4f} ({p_spam_given_lottery*100:.1f}%)")
+    print(
+        f"  P(spam | 'lottery'):     {p_spam_given_lottery:.4f} ({p_spam_given_lottery*100:.1f}%)"
+    )
 
 
 def demo_naive_bayes():
@@ -146,14 +154,26 @@ def demo_naive_bayes():
     ]
 
     train_labels = [
-        "spam", "spam", "spam", "spam", "spam",
-        "ham", "ham", "ham", "ham", "ham", "ham", "ham",
+        "spam",
+        "spam",
+        "spam",
+        "spam",
+        "spam",
+        "ham",
+        "ham",
+        "ham",
+        "ham",
+        "ham",
+        "ham",
+        "ham",
     ]
 
     classifier = NaiveBayes(smoothing=1.0)
     classifier.train(train_docs, train_labels)
 
-    print(f"\n  Training: {len(train_docs)} documents ({sum(1 for l in train_labels if l == 'spam')} spam, {sum(1 for l in train_labels if l == 'ham')} ham)")
+    print(
+        f"\n  Training: {len(train_docs)} documents ({sum(1 for l in train_labels if l == 'spam')} spam, {sum(1 for l in train_labels if l == 'ham')} ham)"
+    )
     print(f"  Vocabulary size: {len(classifier.vocab)}")
 
     test_messages = [
@@ -236,8 +256,10 @@ def sequential_update_demo():
         print(f"\n  {description}")
         print(f"  Posterior: Beta({alpha}, {beta_param})")
         print(f"  Posterior mean: {mean:.4f}")
-        variance = (alpha * beta_param) / ((alpha + beta_param) ** 2 * (alpha + beta_param + 1))
-        std = variance ** 0.5
+        variance = (alpha * beta_param) / (
+            (alpha + beta_param) ** 2 * (alpha + beta_param + 1)
+        )
+        std = variance**0.5
         print(f"  Posterior std:  {std:.4f}")
 
     print(f"\n  Final belief after all data: Beta({alpha}, {beta_param})")
@@ -250,7 +272,9 @@ def sequential_update_demo():
     beta_batch += total_f
     print(f"\n  Batch update (all data at once): Beta({alpha_batch}, {beta_batch})")
     print(f"  Mean = {alpha_batch / (alpha_batch + beta_batch):.4f}")
-    print(f"  Sequential and batch give the same result: {alpha == alpha_batch and beta_param == beta_batch}")
+    print(
+        f"  Sequential and batch give the same result: {alpha == alpha_batch and beta_param == beta_batch}"
+    )
 
 
 def ab_test_demo():
@@ -259,6 +283,7 @@ def ab_test_demo():
     print("=" * 60)
 
     import random as rng
+
     rng.seed(42)
 
     a_clicks, a_views = 50, 1000
@@ -269,8 +294,12 @@ def ab_test_demo():
 
     print(f"\n  Variant A: {a_clicks}/{a_views} clicks")
     print(f"  Variant B: {b_clicks}/{b_views} clicks")
-    print(f"\n  Posterior A: Beta({a_alpha}, {a_beta}), mean = {a_alpha / (a_alpha + a_beta):.4f}")
-    print(f"  Posterior B: Beta({b_alpha}, {b_beta}), mean = {b_alpha / (b_alpha + b_beta):.4f}")
+    print(
+        f"\n  Posterior A: Beta({a_alpha}, {a_beta}), mean = {a_alpha / (a_alpha + a_beta):.4f}"
+    )
+    print(
+        f"  Posterior B: Beta({b_alpha}, {b_beta}), mean = {b_alpha / (b_alpha + b_beta):.4f}"
+    )
 
     n_samples = 100000
     b_wins = 0
@@ -319,7 +348,9 @@ def _gamma_sample(shape, rng_module):
     if shape <= 0:
         raise ValueError("Gamma shape parameter must be positive")
     if shape < 1:
-        return _gamma_sample(shape + 1, rng_module) * rng_module.random() ** (1.0 / shape)
+        return _gamma_sample(shape + 1, rng_module) * rng_module.random() ** (
+            1.0 / shape
+        )
 
     d = shape - 1.0 / 3.0
     c = 1.0 / (9.0 * d) ** 0.5
@@ -330,9 +361,9 @@ def _gamma_sample(shape, rng_module):
         if v <= 0:
             continue
         u = rng_module.random()
-        if u < 1 - 0.0331 * x ** 4:
+        if u < 1 - 0.0331 * x**4:
             return d * v
-        if math.log(u) < 0.5 * x ** 2 + d * (1 - v + math.log(v)):
+        if math.log(u) < 0.5 * x**2 + d * (1 - v + math.log(v)):
             return d * v
 
 
